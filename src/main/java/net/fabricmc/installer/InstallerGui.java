@@ -40,7 +40,6 @@ public class InstallerGui extends JFrame {
 		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 		setIconImage(Toolkit.getDefaultToolkit().getImage(ClassLoader.getSystemClassLoader().getResource("icon.png")));
 
-		Main.GAME_VERSION_META.load();
 		Main.LOADER_META.load();
 	}
 
@@ -56,7 +55,8 @@ public class InstallerGui extends JFrame {
 		}
 	}
 
-	public static void start() throws IOException, ClassNotFoundException, UnsupportedLookAndFeelException, InstantiationException, IllegalAccessException, XMLStreamException {
+	public static void start()
+			throws IOException, ClassNotFoundException, UnsupportedLookAndFeelException, InstantiationException, IllegalAccessException, XMLStreamException {
 		//This will make people happy
 		UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 		InstallerGui dialog = new InstallerGui();

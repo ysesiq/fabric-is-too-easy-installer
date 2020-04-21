@@ -16,26 +16,22 @@
 
 package net.fabricmc.installer.util;
 
-import com.google.gson.reflect.TypeToken;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.lang.reflect.Type;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
-public class MetaHandler extends CompletableHandler<List<MetaHandler.GameVersion>> {
+public class LoaderVersionHandler extends CompletableHandler<List<String>> {
 
 	private final String metaUrl;
-	private List<GameVersion> versions;
+	private List<String> versions;
 
-	public MetaHandler(String url) {
+	public LoaderVersionHandler(String url) {
 		this.metaUrl = url;
 	}
 
@@ -43,37 +39,28 @@ public class MetaHandler extends CompletableHandler<List<MetaHandler.GameVersion
 		URL url = new URL(metaUrl);
 		URLConnection conn = url.openConnection();
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
-			String json = reader.lines().collect(Collectors.joining("\n"));
-			Type type = new TypeToken<ArrayList<GameVersion>>() {}.getType();
-			versions = Utils.GSON.fromJson(json, type);
+			boolean[] started = {false};
+			versions = new ArrayList<>();
+			reader.lines().forEach(line -> {
+				String trimmed = line.trim();
+				if (trimmed.equals("<versions>")) started[0] = true;
+				else if (trimmed.equals("</versions>")) started[0] = false;
+				else if (started[0]) {
+					if (!trimmed.startsWith("<version>") || !trimmed.endsWith("</version>"))
+						throw new IllegalStateException("Invalid Line: " + trimmed);
+					versions.add(0, trimmed.replace("<version>", "").replace("</version>", ""));
+				}
+			});
 			complete(versions);
 		}
 	}
 
-	public List<GameVersion> getVersions() {
+	public List<String> getVersions() {
 		return Collections.unmodifiableList(versions);
 	}
 
-	public GameVersion getLatestVersion(boolean snapshot){
-		if(snapshot){
-			return versions.get(0);
-		} else {
-			return versions.stream()
-				.filter(GameVersion::isStable).findFirst().orElse(null);
-		}
-	}
-
-	public static class GameVersion {
-		String version;
-		boolean stable;
-
-		public String getVersion() {
-			return version;
-		}
-
-		public boolean isStable() {
-			return stable;
-		}
+	public String getLatestVersion() {
+		return versions.get(0);
 	}
 
 }
