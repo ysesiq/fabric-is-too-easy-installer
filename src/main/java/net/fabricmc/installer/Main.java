@@ -67,7 +67,7 @@ public class Main {
 
 		//Can be used if you wish to re-host or provide custom versions. Ensure you include the trailing /
 		argumentParser.ifPresent("mavenurl", s -> Reference.mavenServerUrl = s);
-		final String mavenUrl = argumentParser.getOrDefault("mavenUrl", () -> "https://dl.bintray.com/legacy-fabric/Legacy-Fabric-Maven/");
+		final String mavenUrl = argumentParser.getOrDefault("mavenUrl", () -> "https://maven.legacyfabric.net/");
 
 		LOADER_META = new LoaderVersionHandler(mavenUrl + "net/fabricmc/fabric-loader-1.8.9/maven-metadata.xml");
 
