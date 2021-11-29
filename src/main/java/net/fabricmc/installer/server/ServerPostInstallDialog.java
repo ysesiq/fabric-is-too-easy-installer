@@ -16,33 +16,62 @@
 
 package net.fabricmc.installer.server;
 
-import com.google.gson.JsonObject;
-import net.fabricmc.installer.InstallerGui;
-import net.fabricmc.installer.util.LauncherMeta;
-import net.fabricmc.installer.util.Utils;
-
-import javax.swing.*;
-import java.awt.*;
-import java.io.*;
+import java.awt.Color;
+import java.awt.Container;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.HeadlessException;
+import java.awt.Toolkit;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.stream.Collectors;
+
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
+
+import mjson.Json;
+
+import net.fabricmc.installer.InstallerGui;
+import net.fabricmc.installer.util.LauncherMeta;
+import net.fabricmc.installer.util.Utils;
 
 public class ServerPostInstallDialog extends JDialog {
-
+	private static final String launchCommand = "java -Xmx2G -jar fabric-server-launch.jar nogui";
 	private static final int MB = 1000000;
 
-	private JPanel panel = new JPanel();
+	private final JPanel panel = new JPanel();
 
-	private ServerHandler serverHandler;
-	private String minecraftVersion;
-	private File installDir;
-	private File minecraftJar;
+	private final ServerHandler serverHandler;
+	private final String minecraftVersion;
+	private final Path installDir;
+	private final Path minecraftJar;
+	private final Path minecraftJarTmp;
 
 	private JLabel serverJarLabel;
 	private JButton downloadButton;
@@ -52,8 +81,9 @@ public class ServerPostInstallDialog extends JDialog {
 		super(InstallerGui.instance, true);
 		this.serverHandler = handler;
 		this.minecraftVersion = (String) handler.gameVersionComboBox.getSelectedItem();
-		this.installDir = new File(handler.installLocation.getText());
-		this.minecraftJar = new File(installDir, "server.jar");
+		this.installDir = Paths.get(handler.installLocation.getText());
+		this.minecraftJar = installDir.resolve("server.jar");
+		this.minecraftJarTmp = installDir.resolve("server.jar.tmp");
 
 		panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
 		initComponents();
@@ -76,11 +106,9 @@ public class ServerPostInstallDialog extends JDialog {
 
 		addRow(panel, panel -> panel.add(fontSize(new JLabel(Utils.BUNDLE.getString("prompt.server.info.command")), 15)));
 		addRow(panel, panel -> {
-			JTextField textField = new JTextField("java -jar fabric-server-launch.jar");
+			JTextField textField = new JTextField(launchCommand);
 			textField.setHorizontalAlignment(JTextField.CENTER);
 			panel.add(textField);
-
-
 		});
 
 		addRow(panel, panel -> {
@@ -98,21 +126,33 @@ public class ServerPostInstallDialog extends JDialog {
 			});
 			panel.add(closeButton);
 		});
-
 	}
 
 	private boolean isValidJarPresent() {
-		if (!minecraftJar.exists()) {
+		if (!Files.exists(minecraftJar)) {
 			return false;
 		}
-		try (JarFile jarFile = new JarFile(minecraftJar)) {
+
+		try (JarFile jarFile = new JarFile(minecraftJar.toFile())) {
 			JarEntry versionEntry = jarFile.getJarEntry("version.json");
+
 			if (versionEntry == null) {
 				return false;
 			}
+
 			InputStream inputStream = jarFile.getInputStream(versionEntry);
-			JsonObject jsonObject = Utils.GSON.fromJson(new InputStreamReader(inputStream), JsonObject.class);
-			return jsonObject.get("id").getAsString().equals(minecraftVersion) || jsonObject.get("name").getAsString().equals(minecraftVersion);
+
+			String text;
+
+			try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+				text = reader.lines().collect(Collectors.joining("\n"));
+			}
+
+			Json json = Json.read(text);
+			String id = json.at("id").asString();
+			String name = json.at("name").asString();
+
+			return minecraftVersion.equals(id) || minecraftVersion.equals(name);
 		} catch (IOException e) {
 			return false;
 		}
@@ -122,6 +162,7 @@ public class ServerPostInstallDialog extends JDialog {
 		if (serverJarLabel == null) {
 			serverJarLabel = new JLabel();
 		}
+
 		if (isValidJarPresent()) {
 			serverJarLabel.setText(new MessageFormat(Utils.BUNDLE.getString("prompt.server.jar.valid")).format(new Object[]{minecraftVersion}));
 			color(serverJarLabel, Color.GREEN.darker());
@@ -133,9 +174,16 @@ public class ServerPostInstallDialog extends JDialog {
 
 	private void doServerJarDownload() {
 		downloadButton.setEnabled(false);
-		if (minecraftJar.exists()) {
-			minecraftJar.delete();
+
+		try {
+			Files.deleteIfExists(minecraftJar);
+			Files.deleteIfExists(minecraftJarTmp);
+		} catch (IOException e) {
+			color(serverJarLabel, Color.RED).setText(e.getMessage());
+			serverHandler.error(e);
+			return;
 		}
+
 		new Thread(() -> {
 			try {
 				URL url = new URL(LauncherMeta.getLauncherMeta().getVersion(minecraftVersion).getVersionMeta().downloads.get("server").url);
@@ -144,26 +192,29 @@ public class ServerPostInstallDialog extends JDialog {
 
 				BufferedInputStream inputStream = new BufferedInputStream(httpConnection.getInputStream());
 
-				FileOutputStream outputStream = new FileOutputStream(minecraftJar);
+				OutputStream outputStream = Files.newOutputStream(minecraftJarTmp);
 				BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(outputStream, 1024);
 
 				byte[] buffer = new byte[1024];
 				long downloaded = 0;
 				int len;
+
 				while ((len = inputStream.read(buffer, 0, 1024)) >= 0) {
 					downloaded += len;
 
-					final String labelText = String.format("Downloading %d/%d MB", downloaded / MB, finalSize / MB);
+					final String labelText = new MessageFormat(Utils.BUNDLE.getString("prompt.server.downloading")).format(new Object[] {downloaded / MB, finalSize / MB});
 					SwingUtilities.invokeLater(() -> color(serverJarLabel, Color.BLUE).setText(labelText));
 
 					bufferedOutputStream.write(buffer, 0, len);
 				}
+
 				bufferedOutputStream.close();
 				inputStream.close();
 
+				Files.move(minecraftJarTmp, minecraftJar, StandardCopyOption.REPLACE_EXISTING);
+
 				updateServerJarLabel();
 				downloadButton.setEnabled(true);
-
 			} catch (IOException e) {
 				color(serverJarLabel, Color.RED).setText(e.getMessage());
 				serverHandler.error(e);
@@ -172,22 +223,21 @@ public class ServerPostInstallDialog extends JDialog {
 	}
 
 	private void generateLaunchScripts() {
-		String launchCommand = "java -jar fabric-server-launch.jar";
+		Map<Path, String> launchScripts = new HashMap<>();
+		launchScripts.put(installDir.resolve("start.bat"), launchCommand + "\npause");
+		launchScripts.put(installDir.resolve("start.sh"), "#!/usr/bin/env bash\n" + launchCommand);
 
-		Map<File, String> launchScripts = new HashMap<>();
-		launchScripts.put(new File(installDir, "start.bat"), launchCommand + "\npause");
-		launchScripts.put(new File(installDir, "start.sh"), "#!/usr/bin/env bash\n" + launchCommand);
+		boolean exists = launchScripts.entrySet().stream().anyMatch(entry -> Files.exists(entry.getKey()));
 
-		boolean exists = launchScripts.entrySet().stream().anyMatch(entry -> entry.getKey().exists());
 		if (exists && (JOptionPane.showConfirmDialog(this, Utils.BUNDLE.getString("prompt.server.overwrite"), "Warning", JOptionPane.YES_NO_OPTION) == JOptionPane.NO_OPTION)) {
 			return;
 		}
 
-		launchScripts.forEach((file, s) -> {
+		launchScripts.forEach((path, s) -> {
 			try {
-				Utils.writeToFile(file, s);
-				file.setExecutable(true, false);
-			} catch (FileNotFoundException e) {
+				Utils.writeToFile(path, s);
+				path.toFile().setExecutable(true, false);
+			} catch (IOException e) {
 				serverHandler.error(e);
 			}
 		});

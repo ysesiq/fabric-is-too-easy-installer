@@ -16,58 +16,77 @@
 
 package net.fabricmc.installer.util;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.URL;
-import java.net.URLConnection;
-import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+
+import mjson.Json;
 
 public class LauncherMeta {
-
 	private static LauncherMeta launcherMeta = null;
 
 	public static LauncherMeta getLauncherMeta() throws IOException {
-		if(launcherMeta == null){
+		if (launcherMeta == null) {
 			launcherMeta = load();
 		}
+
 		return launcherMeta;
 	}
 
 	private static LauncherMeta load() throws IOException {
-		URL url = new URL("https://launchermeta.mojang.com/mc/game/version_manifest.json");
-		URLConnection conn = url.openConnection();
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
-			return Utils.GSON.fromJson(reader, LauncherMeta.class);
-		}
+		List<Version> versions = new ArrayList<>();
+		versions.addAll(getVersionsFromUrl(Reference.minecraftLauncherManifest));
+		versions.addAll(getVersionsFromUrl(Reference.experimentalVersionsManifest));
+
+		return new LauncherMeta(versions);
 	}
 
-	public List<Version> versions;
+	private static List<Version> getVersionsFromUrl(String urlStr) throws IOException {
+		URL url = new URL(urlStr);
+
+		String str = Utils.readTextFile(url);
+		Json json = Json.read(str);
+
+		List<Version> versions = json.at("versions").asJsonList()
+				.stream()
+				.map(Version::new)
+				.collect(Collectors.toList());
+
+		return versions;
+	}
+
+	public final List<Version> versions;
+
+	public LauncherMeta(List<Version> versions) {
+		this.versions = versions;
+	}
 
 	public static class Version {
-		public String id;
-		public String type;
-		public String url;
-		public String time;
-		public String releaseTime;
+		public final String id;
+		public final String url;
 
-		private transient VersionMeta versionMeta = null;
+		private VersionMeta versionMeta = null;
+
+		public Version(Json json) {
+			this.id = json.at("id").asString();
+			this.url = json.at("url").asString();
+		}
 
 		public VersionMeta getVersionMeta() throws IOException {
-			if(versionMeta == null){
+			if (versionMeta == null) {
 				URL url = new URL(this.url);
-				URLConnection conn = url.openConnection();
-				try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
-					versionMeta = Utils.GSON.fromJson(reader, VersionMeta.class);
-				}
+				String str = Utils.readTextFile(url);
+				Json json = Json.read(str);
+				versionMeta = new VersionMeta(json);
 			}
+
 			return versionMeta;
 		}
 	}
 
-	public Version getVersion(String version){
+	public Version getVersion(String version) {
 		return versions.stream().filter(v -> v.id.equals(version)).findFirst().orElse(null);
 	}
-
 }

@@ -16,20 +16,22 @@
 
 package net.fabricmc.installer.server;
 
+import java.io.FileNotFoundException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.text.MessageFormat;
+
+import javax.swing.JPanel;
+
 import net.fabricmc.installer.Handler;
 import net.fabricmc.installer.InstallerGui;
+import net.fabricmc.installer.LoaderVersion;
 import net.fabricmc.installer.util.ArgumentParser;
 import net.fabricmc.installer.util.InstallerProgress;
-import net.fabricmc.installer.util.LauncherMeta;
 import net.fabricmc.installer.util.Utils;
 
-import javax.swing.*;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.net.URL;
-
 public class ServerHandler extends Handler {
-
 	@Override
 	public String name() {
 		return "Server";
@@ -38,34 +40,42 @@ public class ServerHandler extends Handler {
 	@Override
 	public void install() {
 		String gameVersion = (String) gameVersionComboBox.getSelectedItem();
-		String loaderVersion = (String) loaderVersionComboBox.getSelectedItem();
+		LoaderVersion loaderVersion = queryLoaderVersion();
+		if (loaderVersion == null) return;
+
 		new Thread(() -> {
 			try {
-				ServerInstaller.install(new File(installLocation.getText()), loaderVersion, gameVersion, this);
+				ServerInstaller.install(Paths.get(installLocation.getText()).toAbsolutePath(), loaderVersion, gameVersion, this);
 				ServerPostInstallDialog.show(this);
 			} catch (Exception e) {
 				error(e);
 			}
+
 			buttonInstall.setEnabled(true);
 		}).start();
 	}
 
 	@Override
 	public void installCli(ArgumentParser args) throws Exception {
-		File file = new File(args.getOrDefault("dir", () -> "."));
-		if (!file.exists()) {
-			throw new FileNotFoundException("Server directory not found at " + file.getAbsolutePath());
-		}
-		String loaderVersion = getLoaderVersion(args);
-		String gameVersion = getGameVersion(args);
-		ServerInstaller.install(file.getAbsoluteFile(), loaderVersion, gameVersion, InstallerProgress.CONSOLE);
+		Path dir = Paths.get(args.getOrDefault("dir", () -> ".")).toAbsolutePath().normalize();
 
-		if(args.has("downloadMinecraft")){
-			File serverJar = new File(file, "server.jar");
+		if (!Files.isDirectory(dir)) {
+			throw new FileNotFoundException("Server directory not found at " + dir + " or not a directory");
+		}
+
+		String gameVersion = getGameVersion(args);
+		LoaderVersion loaderVersion = new LoaderVersion(getLoaderVersion(args, gameVersion));
+		ServerInstaller.install(dir, loaderVersion, gameVersion, InstallerProgress.CONSOLE);
+
+		if (args.has("downloadMinecraft")) {
 			InstallerProgress.CONSOLE.updateProgress(Utils.BUNDLE.getString("progress.download.minecraft"));
-			Utils.downloadFile(new URL(LauncherMeta.getLauncherMeta().getVersion(gameVersion).getVersionMeta().downloads.get("server").url), serverJar);
+			Path serverJar = dir.resolve("server.jar");
+			MinecraftServerDownloader downloader = new MinecraftServerDownloader(gameVersion);
+			downloader.downloadMinecraftServer(serverJar);
 			InstallerProgress.CONSOLE.updateProgress(Utils.BUNDLE.getString("progress.done"));
 		}
+
+		InstallerProgress.CONSOLE.updateProgress(new MessageFormat(Utils.BUNDLE.getString("progress.done.start.server")).format(new Object[]{ServerInstaller.DEFAULT_LAUNCH_JAR_NAME}));
 	}
 
 	@Override
@@ -75,12 +85,10 @@ public class ServerHandler extends Handler {
 
 	@Override
 	public void setupPane1(JPanel pane, InstallerGui installerGui) {
-
 	}
 
 	@Override
 	public void setupPane2(JPanel pane, InstallerGui installerGui) {
-		installLocation.setText(new File("").getAbsolutePath());
+		installLocation.setText(Paths.get(".").toAbsolutePath().normalize().toString());
 	}
-
 }
