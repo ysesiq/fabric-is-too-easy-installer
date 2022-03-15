@@ -91,46 +91,6 @@ public class ServerInstaller {
 			mainClassMeta = json.at("mainClass").asString();
 		} else { // loader jar available, generate library list from it
 			libraries.add(new Library(String.format("net.fabricmc:fabric-loader:%s", loaderVersion.name), null, loaderVersion.path));
-			libraries.add(new Library(String.format("net.fabricmc:intermediary:%s", gameVersion), "https://maven.fabricmc.net/", null));
-
-			try (ZipFile zf = new ZipFile(loaderVersion.path.toFile())) {
-				ZipEntry entry = zf.getEntry("fabric-installer.json");
-				Json json = Json.read(Utils.readString(zf.getInputStream(entry)));
-				Json librariesElem = json.at("libraries");
-
-				for (Json libraryJson : librariesElem.at("common").asJsonList()) {
-					libraries.add(new Library(libraryJson));
-				}
-
-				for (Json libraryJson : librariesElem.at("server").asJsonList()) {
-					libraries.add(new Library(libraryJson));
-				}
-
-				mainClassMeta = json.at("mainClass").at("server").asString();
-			}
-
-			if (!isOldGuava(gameVersion)) {
-				for (Json libraryJson : json.at("libraries").at("server").asJsonList()) {
-					libraries.add(new Library(libraryJson));
-				}
-			}
-
-			if (isOldGuava(gameVersion) && legacyLoader) {
-				libraries.add(new Library(
-						"dev.blucobalt:mcguava:0.07",
-						"https://repo.blucobalt.dev/repository/maven-hosted/",
-						null
-				));
-			}
-
-			if (isOldGuava(gameVersion)) {
-				libraries.add(new Library("org.apache.logging.log4j:log4j-api:2.8.1", "https://libraries.minecraft.net/", null));
-				libraries.add(new Library("org.apache.logging.log4j:log4j-core:2.8.1", "https://libraries.minecraft.net/", null));
-			}
-
-			mainClassMeta = json.at("mainClass").at("server").asString();
-		} else { // loader jar available, generate library list from it
-			libraries.add(new Library(String.format("net.fabricmc:fabric-loader:%s", loaderVersion.name), null, loaderVersion.path));
 			libraries.add(new Library(String.format("net.fabricmc:intermediary:%s", gameVersion), "https://maven.legacyfabric.net/", null));
 
 			try (ZipFile zf = new ZipFile(loaderVersion.path.toFile())) {

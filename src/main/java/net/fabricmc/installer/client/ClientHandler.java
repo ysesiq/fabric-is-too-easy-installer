@@ -16,7 +16,7 @@
 
 package net.fabricmc.installer.client;
 
-import java.awt.Desktop;
+import java.awt.*;
 import java.io.FileNotFoundException;
 import java.nio.file.Files;
 import java.nio.file.Path;

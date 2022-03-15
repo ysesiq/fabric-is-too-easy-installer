@@ -55,50 +55,34 @@ public class ClientInstaller {
 		Files.deleteIfExists(dummyJar);
 		Files.createFile(dummyJar);
 
-		Utils.writeToFile(profileJson, Utils.GSON.toJson(launchJson));
-
 		/*
 		URL profileUrl = new URL(Reference.getMetaServerEndpoint(String.format("v2/versions/loader/%s/%s/profile/json", gameVersion, loaderVersion.name)));
 		Utils.downloadFile(profileUrl, profileJson);
 		*/
 
-		URL downloadUrl;
-
-		if (legacyLoader) {
-			downloadUrl = new URL(String.format("https://maven.legacyfabric.net/net/fabricmc/fabric-loader-1.8.9/%s/fabric-loader-1.8.9-%s.json", loaderVersion.name, loaderVersion.name));
-		} else {
-			downloadUrl = new URL(String.format("https://maven.fabricmc.net/net/fabricmc/fabric-loader/%s/fabric-loader-%s.json", loaderVersion.name, loaderVersion.name));
-		}
+		URL downloadUrl = new URL(String.format("https://maven.fabricmc.net/net/fabricmc/fabric-loader/%s/fabric-loader-%s.json", loaderVersion.name, loaderVersion.name));
 
 		Json json = Json.read(Utils.readTextFile(downloadUrl));
 
 		Json libraries = Json.array(
 				Json.object()
-						.set("name", String.format(legacyLoader ? "net.fabricmc:fabric-loader-1.8.9:%s" : "net.fabricmc:fabric-loader:%s", loaderVersion.name))
-						.set("url", legacyLoader ? "https://maven.legacyfabric.net/" : "https://maven.fabricmc.net/"),
+						.set("name", String.format("net.fabricmc:fabric-loader:%s", loaderVersion.name))
+						.set("url", "https://maven.fabricmc.net/"),
 				Json.object()
 						.set("name", String.format("net.fabricmc:intermediary:%s", gameVersion))
 						.set("url", "https://maven.legacyfabric.net/")
 		);
 
-		if (legacyLoader) {
+		if (Utils.compareVersions(gameVersion, "1.6.4") <= 0 && Utils.compareVersions(loaderVersion.name, "0.12.12") <= 0) {
 			libraries.add(
 					Json.object()
-							.set("name", "com.google.guava:guava:21.0")
-							.set("url", "https://maven.fabricmc.net/")
-			);
-		}
-
-		if (Utils.compareVersions(gameVersion, "1.6.4") <= 0) {
-			libraries.add(
-					Json.object()
-							.set("name", "org.apache.logging.log4j:log4j-api:2.8.1")
-							.set("url", "https://libraries.minecraft.net/")
+							.set("name", "org.apache.logging.log4j:log4j-api:2.17.0")
+							.set("url", "https://repo1.maven.org/maven2/")
 			);
 			libraries.add(
 					Json.object()
-							.set("name", "org.apache.logging.log4j:log4j-core:2.8.1")
-							.set("url", "https://libraries.minecraft.net/")
+							.set("name", "org.apache.logging.log4j:log4j-core:2.17.0")
+							.set("url", "https://repo1.maven.org/maven2/")
 			);
 		}
 

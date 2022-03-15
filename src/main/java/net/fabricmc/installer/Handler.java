@@ -16,27 +16,15 @@
 
 package net.fabricmc.installer;
 
-import java.awt.Color;
-import java.awt.Container;
-import java.awt.FlowLayout;
-import java.awt.Font;
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.function.Consumer;
 
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
-import javax.swing.JEditorPane;
-import javax.swing.JFileChooser;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JTextField;
-import javax.swing.UIManager;
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import net.fabricmc.installer.util.ArgumentParser;
@@ -97,7 +85,6 @@ public abstract class Handler implements InstallerProgress {
 
 		Main.GAME_VERSION_META.onComplete(versions -> {
 			updateGameVersions();
-			updateLoaderVersions();
 		});
 
 		addRow(pane, c, "prompt.loader.version",
@@ -149,18 +136,6 @@ public abstract class Handler implements InstallerProgress {
 		});
 
 		return pane;
-	}
-
-	private void updateLoaderVersions() {
-		this.updateLoaderVersions("1.8.9");
-	}
-
-	private void updateLoaderVersions(String mcVersion) {
-		try {
-			Main.LOADER_META.load(mcVersion);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
 	}
 
 	private void updateGameVersions() {
@@ -310,12 +285,12 @@ public abstract class Handler implements InstallerProgress {
 		});
 	}
 
-	protected String getLoaderVersion(ArgumentParser args, String gameVersion) {
+	protected String getLoaderVersion(ArgumentParser args) {
 		return args.getOrDefault("loader", () -> {
 			System.out.println("Using latest loader version");
 
 			try {
-				Main.LOADER_META.load(gameVersion);
+				Main.LOADER_META.load("1.8.9");
 			} catch (IOException e) {
 				throw new RuntimeException("Failed to load latest versions", e);
 			}
