@@ -63,8 +63,8 @@ public class ServerHandler extends Handler {
 			throw new FileNotFoundException("Server directory not found at " + dir + " or not a directory");
 		}
 
+		LoaderVersion loaderVersion = new LoaderVersion(getLoaderVersion(args));
 		String gameVersion = getGameVersion(args);
-		LoaderVersion loaderVersion = new LoaderVersion(getLoaderVersion(args, gameVersion));
 		ServerInstaller.install(dir, loaderVersion, gameVersion, InstallerProgress.CONSOLE);
 
 		if (args.has("downloadMinecraft")) {
@@ -84,11 +84,7 @@ public class ServerHandler extends Handler {
 	}
 
 	@Override
-	public void setupPane1(JPanel pane, InstallerGui installerGui) {
-	}
-
-	@Override
-	public void setupPane2(JPanel pane, InstallerGui installerGui) {
+	public void setupPane2(JPanel pane, GridBagConstraints c, InstallerGui installerGui) {
 		installLocation.setText(Paths.get(".").toAbsolutePath().normalize().toString());
 	}
 }

@@ -45,6 +45,9 @@ import net.fabricmc.installer.util.MetaHandler;
 import net.fabricmc.installer.util.Utils;
 
 public abstract class Handler implements InstallerProgress {
+	protected static final int HORIZONTAL_SPACING = 4;
+	protected static final int VERTICAL_SPACING = 6;
+
 	private static final String SELECT_CUSTOM_ITEM = "(select custom)";
 
 	public JButton buttonInstall;
@@ -67,29 +70,29 @@ public abstract class Handler implements InstallerProgress {
 	public abstract String cliHelp();
 
 	//this isnt great, but works
-	public abstract void setupPane1(JPanel pane, InstallerGui installerGui);
+	public void setupPane1(JPanel pane, GridBagConstraints c, InstallerGui installerGui) { }
 
-	public abstract void setupPane2(JPanel pane, InstallerGui installerGui);
+	public void setupPane2(JPanel pane, GridBagConstraints c, InstallerGui installerGui) { }
 
 	public JPanel makePanel(InstallerGui installerGui) {
-		pane = new JPanel();
-		pane.setLayout(new BoxLayout(pane, BoxLayout.PAGE_AXIS));
+		pane = new JPanel(new GridBagLayout());
+		pane.setBorder(new EmptyBorder(4, 4, 4, 4));
 
-		setupPane1(pane, installerGui);
+		GridBagConstraints c = new GridBagConstraints();
+		c.insets = new Insets(VERTICAL_SPACING, HORIZONTAL_SPACING, VERTICAL_SPACING, HORIZONTAL_SPACING);
+		c.gridx = c.gridy = 0;
 
-		addRow(pane, jPanel -> {
-			jPanel.add(new JLabel(Utils.BUNDLE.getString("prompt.game.version")));
-			jPanel.add(gameVersionComboBox = new JComboBox<>());
-			jPanel.add(snapshotCheckBox = new JCheckBox(Utils.BUNDLE.getString("option.show.snapshots")));
-			snapshotCheckBox.setSelected(false);
-			snapshotCheckBox.addActionListener(e -> {
-				if (Main.GAME_VERSION_META.isComplete()) {
-					updateGameVersions();
-				}
-			});
-			gameVersionComboBox.addActionListener(e -> {
-				this.updateLoaderVersions((String) gameVersionComboBox.getSelectedItem());
-			});
+		setupPane1(pane, c, installerGui);
+
+		addRow(pane, c, "prompt.game.version",
+				gameVersionComboBox = new JComboBox<>(),
+				createSpacer(),
+				snapshotCheckBox = new JCheckBox(Utils.BUNDLE.getString("option.show.snapshots")));
+		snapshotCheckBox.setSelected(false);
+		snapshotCheckBox.addActionListener(e -> {
+			if (Main.GAME_VERSION_META.isComplete()) {
+				updateGameVersions();
+			}
 		});
 
 		Main.GAME_VERSION_META.onComplete(versions -> {
@@ -97,33 +100,27 @@ public abstract class Handler implements InstallerProgress {
 			updateLoaderVersions();
 		});
 
-		addRow(pane, jPanel -> {
-			jPanel.add(new JLabel(Utils.BUNDLE.getString("prompt.loader.version")));
-			jPanel.add(loaderVersionComboBox = new JComboBox<>());
-		});
+		addRow(pane, c, "prompt.loader.version",
+				loaderVersionComboBox = new JComboBox<>());
 
-		addRow(pane, jPanel -> {
-			jPanel.add(new JLabel(Utils.BUNDLE.getString("prompt.select.location")));
-			jPanel.add(installLocation = new JTextField());
-			jPanel.add(selectFolderButton = new JButton());
+		addRow(pane, c, "prompt.select.location",
+				installLocation = new JTextField(20),
+				selectFolderButton = new JButton());
+		selectFolderButton.setText("...");
+		selectFolderButton.setPreferredSize(new Dimension(installLocation.getPreferredSize().height, installLocation.getPreferredSize().height));
+		selectFolderButton.addActionListener(e -> InstallerGui.selectInstallLocation(() -> installLocation.getText(), s -> installLocation.setText(s)));
 
-			selectFolderButton.setText("...");
-			selectFolderButton.addActionListener(e -> InstallerGui.selectInstallLocation(() -> installLocation.getText(), s -> installLocation.setText(s)));
-		});
+		setupPane2(pane, c, installerGui);
 
-		setupPane2(pane, installerGui);
+		addRow(pane, c, null,
+				statusLabel = new JLabel());
+		statusLabel.setText(Utils.BUNDLE.getString("prompt.loading.versions"));
 
-		addRow(pane, jPanel -> {
-			jPanel.add(statusLabel = new JLabel());
-			statusLabel.setText(Utils.BUNDLE.getString("prompt.loading.versions"));
-		});
-
-		addRow(pane, jPanel -> {
-			jPanel.add(buttonInstall = new JButton(Utils.BUNDLE.getString("prompt.install")));
-			buttonInstall.addActionListener(e -> {
-				buttonInstall.setEnabled(false);
-				install();
-			});
+		addLastRow(pane, c, null,
+				buttonInstall = new JButton(Utils.BUNDLE.getString("prompt.install")));
+		buttonInstall.addActionListener(e -> {
+			buttonInstall.setEnabled(false);
+			install();
 		});
 
 		Main.LOADER_META.onComplete(versions -> {
@@ -177,7 +174,9 @@ public abstract class Handler implements InstallerProgress {
 			gameVersionComboBox.addItem(version.getVersion());
 		}
 
-		gameVersionComboBox.setSelectedIndex(2); // Select 1.8.9 by default
+		gameVersionComboBox.setSelectedIndex(0);
+
+		InstallerGui.instance.updateSize(false);
 	}
 
 	protected LoaderVersion queryLoaderVersion() {
@@ -253,10 +252,48 @@ public abstract class Handler implements InstallerProgress {
 				JOptionPane.ERROR_MESSAGE);
 	}
 
-	protected void addRow(Container parent, Consumer<JPanel> consumer) {
-		JPanel panel = new JPanel(new FlowLayout());
-		consumer.accept(panel);
-		parent.add(panel);
+	protected void addRow(Container parent, GridBagConstraints c, String label, Component... components) {
+		addRow(parent, c, false, label, components);
+	}
+
+	protected void addLastRow(Container parent, GridBagConstraints c, String label, Component... components) {
+		addRow(parent, c, true, label, components);
+	}
+
+	protected static Component createSpacer() {
+		return Box.createRigidArea(new Dimension(4, 0));
+	}
+
+	private void addRow(Container parent, GridBagConstraints c, boolean last, String label, Component... components) {
+		if (label != null) {
+			c.gridwidth = 1;
+			c.anchor = GridBagConstraints.LINE_END;
+			c.fill = GridBagConstraints.NONE;
+			c.weightx = 0;
+			parent.add(new JLabel(Utils.BUNDLE.getString(label)), c);
+			c.gridx++;
+			c.anchor = GridBagConstraints.LINE_START;
+			c.fill = GridBagConstraints.HORIZONTAL;
+		} else {
+			c.gridwidth = 2;
+			if (last) c.weighty = 1;
+			c.anchor = last ? GridBagConstraints.PAGE_START : GridBagConstraints.CENTER;
+			c.fill = GridBagConstraints.NONE;
+		}
+
+		c.weightx = 1;
+
+		JPanel panel = new JPanel();
+		panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+
+		for (Component comp : components) {
+			panel.add(comp);
+		}
+
+		parent.add(panel, c);
+
+		c.gridy++;
+		c.gridx = 0;
 	}
 
 	protected String getGameVersion(ArgumentParser args) {

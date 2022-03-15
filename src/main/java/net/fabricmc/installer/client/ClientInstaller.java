@@ -55,7 +55,7 @@ public class ClientInstaller {
 		Files.deleteIfExists(dummyJar);
 		Files.createFile(dummyJar);
 
-		boolean legacyLoader = loaderVersion.name.length() > 10;
+		Utils.writeToFile(profileJson, Utils.GSON.toJson(launchJson));
 
 		/*
 		URL profileUrl = new URL(Reference.getMetaServerEndpoint(String.format("v2/versions/loader/%s/%s/profile/json", gameVersion, loaderVersion.name)));

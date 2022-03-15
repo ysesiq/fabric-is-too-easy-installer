@@ -45,6 +45,8 @@ public class InstallerGui extends JFrame {
 		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 		setIconImage(Toolkit.getDefaultToolkit().getImage(ClassLoader.getSystemClassLoader().getResource("icon.png")));
 
+		instance = this;
+
 		Main.GAME_VERSION_META.load();
 		Main.LOADER_META.load("1.8.9");
 	}
@@ -64,13 +66,28 @@ public class InstallerGui extends JFrame {
 	public static void start()
 			throws IOException, ClassNotFoundException, UnsupportedLookAndFeelException, InstantiationException, IllegalAccessException, XMLStreamException {
 		//This will make people happy
-		UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+		String lafCls = UIManager.getSystemLookAndFeelClassName();
+		UIManager.setLookAndFeel(lafCls);
+
+		if (lafCls.endsWith("AquaLookAndFeel")) { // patch osx tab text color bug JDK-8251377
+			UIManager.put("TabbedPane.foreground", Color.BLACK);
+		}
+
 		InstallerGui dialog = new InstallerGui();
-		instance = dialog;
-		dialog.pack();
+		dialog.updateSize(true);
 		dialog.setTitle(Utils.BUNDLE.getString("installer.title"));
 		dialog.setLocationRelativeTo(null);
 		dialog.setVisible(true);
+	}
+
+	public void updateSize(boolean updateMinimum) {
+		if (updateMinimum) setMinimumSize(null);
+		setPreferredSize(null);
+		pack();
+		Dimension size = getPreferredSize();
+		if (updateMinimum) setMinimumSize(size);
+		setPreferredSize(new Dimension(Math.max(450, size.width), size.height));
+		setSize(getPreferredSize());
 	}
 
 	private void initComponents() {

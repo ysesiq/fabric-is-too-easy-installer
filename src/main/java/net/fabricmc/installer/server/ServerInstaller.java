@@ -54,6 +54,7 @@ import mjson.Json;
 import net.fabricmc.installer.LoaderVersion;
 import net.fabricmc.installer.util.InstallerProgress;
 import net.fabricmc.installer.util.Library;
+import net.fabricmc.installer.util.Reference;
 import net.fabricmc.installer.util.Utils;
 
 public class ServerInstaller {
@@ -67,15 +68,7 @@ public class ServerInstaller {
 		install(dir, loaderVersion, gameVersion, progress, launchJar);
 	}
 
-	private static boolean isOldGuava(String mcVersion) {
-		return !(-1 < Utils.compareVersions("1.8.9", mcVersion));
-	}
-
 	public static void install(Path dir, LoaderVersion loaderVersion, String gameVersion, InstallerProgress progress, Path launchJar) throws IOException {
-		boolean legacyLoader = loaderVersion.name.length() > 10;
-
-		if (Objects.equals(gameVersion, "1.8.9") && legacyLoader) throw new IOException("1.8.9 server is incompatible with version 0.11.x and older, please use 0.12 and newer!");
-
 		progress.updateProgress(new MessageFormat(Utils.BUNDLE.getString("progress.installing.server")).format(new Object[]{String.format("%s(%s)", loaderVersion.name, gameVersion)}));
 
 		Files.createDirectories(dir);
@@ -89,23 +82,31 @@ public class ServerInstaller {
 		String mainClassMeta;
 
 		if (loaderVersion.path == null) { // loader jar unavailable, grab everything from meta
-			URL downloadUrl;
+			Json json = Json.read(Utils.readTextFile(new URL(Reference.getMetaServerEndpoint(String.format("v2/versions/loader/%s/%s/server/json", gameVersion, loaderVersion.name)))));
 
-			if (legacyLoader) {
-				downloadUrl = new URL(String.format("https://maven.legacyfabric.net/net/fabricmc/fabric-loader-1.8.9/%s/fabric-loader-1.8.9-%s.json", loaderVersion.name, loaderVersion.name));
-			} else {
-				downloadUrl = new URL(String.format("https://maven.fabricmc.net/net/fabricmc/fabric-loader/%s/fabric-loader-%s.json", loaderVersion.name, loaderVersion.name));
+			for (Json libraryJson : json.at("libraries").asJsonList()) {
+				libraries.add(new Library(libraryJson));
 			}
 
-			Json json = Json.read(Utils.readTextFile(downloadUrl));
+			mainClassMeta = json.at("mainClass").asString();
+		} else { // loader jar available, generate library list from it
+			libraries.add(new Library(String.format("net.fabricmc:fabric-loader:%s", loaderVersion.name), null, loaderVersion.path));
+			libraries.add(new Library(String.format("net.fabricmc:intermediary:%s", gameVersion), "https://maven.fabricmc.net/", null));
 
-			libraries.add(new Library(String.format(
-					legacyLoader ? "net.fabricmc:fabric-loader-1.8.9:%s" : "net.fabricmc:fabric-loader:%s", loaderVersion.name),
-					legacyLoader ? "https://maven.legacyfabric.net/" : "https://maven.fabricmc.net/", null));
-			libraries.add(new Library(String.format("net.fabricmc:intermediary:%s", gameVersion), "https://maven.legacyfabric.net/", null));
+			try (ZipFile zf = new ZipFile(loaderVersion.path.toFile())) {
+				ZipEntry entry = zf.getEntry("fabric-installer.json");
+				Json json = Json.read(Utils.readString(zf.getInputStream(entry)));
+				Json librariesElem = json.at("libraries");
 
-			for (Json libraryJson : json.at("libraries").at("common").asJsonList()) {
-				libraries.add(new Library(libraryJson));
+				for (Json libraryJson : librariesElem.at("common").asJsonList()) {
+					libraries.add(new Library(libraryJson));
+				}
+
+				for (Json libraryJson : librariesElem.at("server").asJsonList()) {
+					libraries.add(new Library(libraryJson));
+				}
+
+				mainClassMeta = json.at("mainClass").at("server").asString();
 			}
 
 			if (!isOldGuava(gameVersion)) {
@@ -153,7 +154,7 @@ public class ServerInstaller {
 		List<Path> libraryFiles = new ArrayList<>();
 
 		for (Library library : libraries) {
-			Path libraryFile = libsDir.resolve(library.getFileName());
+			Path libraryFile = libsDir.resolve(library.getPath());
 
 			if (library.inputPath == null) {
 				progress.updateProgress(new MessageFormat(Utils.BUNDLE.getString("progress.download.library.entry")).format(new Object[]{library.name}));
@@ -197,7 +198,7 @@ public class ServerInstaller {
 
 			if (!shadeLibraries) {
 				mainAttributes.put(Attributes.Name.CLASS_PATH, libraryFiles.stream()
-						.map(f -> file.getParent().relativize(f).normalize().toString())
+						.map(f -> file.getParent().relativize(f).normalize().toString().replace("\\", "/"))
 						.collect(Collectors.joining(" ")));
 			}
 
