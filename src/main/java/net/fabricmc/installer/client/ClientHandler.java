@@ -16,7 +16,8 @@
 
 package net.fabricmc.installer.client;
 
-import java.awt.*;
+import java.awt.Desktop;
+import java.awt.GridBagConstraints;
 import java.io.FileNotFoundException;
 import java.nio.file.Files;
 import java.nio.file.Path;
