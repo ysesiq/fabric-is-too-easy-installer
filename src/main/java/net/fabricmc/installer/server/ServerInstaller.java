@@ -53,7 +53,6 @@ import mjson.Json;
 import net.fabricmc.installer.LoaderVersion;
 import net.fabricmc.installer.util.InstallerProgress;
 import net.fabricmc.installer.util.Library;
-import net.fabricmc.installer.util.Reference;
 import net.fabricmc.installer.util.Utils;
 
 public class ServerInstaller {
@@ -81,13 +80,31 @@ public class ServerInstaller {
 		String mainClassMeta;
 
 		if (loaderVersion.path == null) { // loader jar unavailable, grab everything from meta
-			Json json = Json.read(Utils.readTextFile(new URL(Reference.getMetaServerEndpoint(String.format("v2/versions/loader/%s/%s/server/json", gameVersion, loaderVersion.name)))));
+			URL downloadUrl = new URL(String.format("https://maven.fabricmc.net/net/fabricmc/fabric-loader/%s/fabric-loader-%s.json", loaderVersion.name, loaderVersion.name));
 
-			for (Json libraryJson : json.at("libraries").asJsonList()) {
+			Json json = Json.read(Utils.readTextFile(downloadUrl));
+
+			libraries.add(new Library(String.format("net.fabricmc:fabric-loader:%s", loaderVersion.name), "https://maven.fabricmc.net/", null));
+			libraries.add(new Library(String.format("net.fabricmc:intermediary:%s", gameVersion), "https://maven.legacyfabric.net/", null));
+
+			for (Json libraryJson : json.at("libraries").at("common").asJsonList()) {
 				libraries.add(new Library(libraryJson));
 			}
 
-			mainClassMeta = json.at("mainClass").asString();
+			if (Utils.compareVersions(gameVersion, "1.6.4") <= 0 && Utils.compareVersions(loaderVersion.name, "0.12.12") <= 0) {
+				libraries.add(new Library(
+						Json.object()
+								.set("name", "org.apache.logging.log4j:log4j-api:2.17.0")
+								.set("url", "https://repo1.maven.org/maven2/")
+				));
+				libraries.add(new Library(
+						Json.object()
+								.set("name", "org.apache.logging.log4j:log4j-core:2.17.0")
+								.set("url", "https://repo1.maven.org/maven2/")
+				));
+			}
+
+			mainClassMeta = json.at("mainClass").at("server").asString();
 		} else { // loader jar available, generate library list from it
 			libraries.add(new Library(String.format("net.fabricmc:fabric-loader:%s", loaderVersion.name), null, loaderVersion.path));
 			libraries.add(new Library(String.format("net.fabricmc:intermediary:%s", gameVersion), "https://maven.legacyfabric.net/", null));
