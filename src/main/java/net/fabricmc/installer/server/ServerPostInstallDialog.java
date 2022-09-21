@@ -191,7 +191,7 @@ public class ServerPostInstallDialog extends JDialog {
 				int finalSize = httpConnection.getContentLength();
 
 				try (BufferedInputStream inputStream = new BufferedInputStream(httpConnection.getInputStream());
-					 OutputStream outputStream = Files.newOutputStream(minecraftJarTmp)) {
+						OutputStream outputStream = Files.newOutputStream(minecraftJarTmp)) {
 					byte[] buffer = new byte[4096];
 					long downloaded = 0;
 					int len;

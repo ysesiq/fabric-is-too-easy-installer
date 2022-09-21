@@ -139,7 +139,7 @@ public class ServerInstaller {
 	}
 
 	private static void makeLaunchJar(Path file, String launchMainClass, String jarMainClass, List<Path> libraryFiles,
-									  boolean shadeLibraries, InstallerProgress progress) throws IOException {
+										boolean shadeLibraries, InstallerProgress progress) throws IOException {
 		Files.deleteIfExists(file);
 
 		try (ZipOutputStream zipOutputStream = new ZipOutputStream(Files.newOutputStream(file))) {
