@@ -64,8 +64,9 @@ public abstract class Handler implements InstallerProgress {
 	public JButton selectFolderButton;
 	public JLabel statusLabel;
 
+	public JCheckBox snapshotCheckBox;
+
 	private JPanel pane;
-	private JCheckBox snapshotCheckBox;
 
 	public abstract String name();
 
@@ -129,8 +130,6 @@ public abstract class Handler implements InstallerProgress {
 		});
 
 		Main.LOADER_META.onComplete(versions -> {
-			loaderVersionComboBox.removeAllItems();
-
 			int stableIndex = -1;
 
 			for (int i = 0; i < versions.size(); i++) {
@@ -216,7 +215,7 @@ public abstract class Handler implements InstallerProgress {
 		return String.format(Locale.ENGLISH,
 				"font-family:%s;font-weight:%s;font-size:%dpt;background-color: rgb(%d,%d,%d);",
 				font.getFamily(), (font.isBold() ? "bold" : "normal"), font.getSize(), color.getRed(), color.getGreen(), color.getBlue()
-				);
+		);
 	}
 
 	@Override
@@ -300,12 +299,6 @@ public abstract class Handler implements InstallerProgress {
 	protected String getLoaderVersion(ArgumentParser args) {
 		return args.getOrDefault("loader", () -> {
 			System.out.println("Using latest loader version");
-
-			try {
-				Main.LOADER_META.load("1.8.9");
-			} catch (IOException e) {
-				throw new RuntimeException("Failed to load latest versions", e);
-			}
 
 			return Main.LOADER_META.getLatestVersion(false).getVersion();
 		});

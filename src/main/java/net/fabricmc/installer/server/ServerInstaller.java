@@ -82,31 +82,13 @@ public class ServerInstaller {
 		if (loaderVersion.path == null) { // loader jar unavailable, grab everything from meta
 			Json json = FabricService.queryMetaJson(String.format("v2/versions/loader/%s/%s/server/json", gameVersion, loaderVersion.name));
 
-			Json json = Json.read(Utils.readTextFile(downloadUrl));
-
-			libraries.add(new Library(String.format("net.fabricmc:fabric-loader:%s", loaderVersion.name), "https://maven.fabricmc.net/", null));
-			libraries.add(new Library(String.format("net.fabricmc:intermediary:%s", gameVersion), "https://maven.legacyfabric.net/", null));
-
-			for (Json libraryJson : json.at("libraries").at("common").asJsonList()) {
+			for (Json libraryJson : json.at("libraries").asJsonList()) {
 				libraries.add(new Library(libraryJson));
 			}
 
-			if (Utils.compareVersions(gameVersion, "1.6.4") <= 0 && Utils.compareVersions(loaderVersion.name, "0.12.12") <= 0) {
-				libraries.add(new Library(
-						Json.object()
-								.set("name", "org.apache.logging.log4j:log4j-api:2.17.0")
-								.set("url", "https://repo1.maven.org/maven2/")
-				));
-				libraries.add(new Library(
-						Json.object()
-								.set("name", "org.apache.logging.log4j:log4j-core:2.17.0")
-								.set("url", "https://repo1.maven.org/maven2/")
-				));
-			}
-
-			mainClassMeta = json.at("mainClass").at("server").asString();
+			mainClassMeta = json.at("mainClass").asString();
 		} else { // loader jar available, generate library list from it
-			libraries.add(new Library(String.format("net.fabricmc:fabric-loader:%s", loaderVersion.name), null, loaderVersion.path));
+			libraries.add(new Library(String.format("net.fabricmc:fabric-loader:%s", loaderVersion.name), "https://maven.fabricmc.net/", loaderVersion.path));
 			libraries.add(new Library(String.format("net.fabricmc:intermediary:%s", gameVersion), "https://maven.legacyfabric.net/", null));
 
 			try (ZipFile zf = new ZipFile(loaderVersion.path.toFile())) {
@@ -157,7 +139,7 @@ public class ServerInstaller {
 	}
 
 	private static void makeLaunchJar(Path file, String launchMainClass, String jarMainClass, List<Path> libraryFiles,
-			boolean shadeLibraries, InstallerProgress progress) throws IOException {
+									  boolean shadeLibraries, InstallerProgress progress) throws IOException {
 		Files.deleteIfExists(file);
 
 		try (ZipOutputStream zipOutputStream = new ZipOutputStream(Files.newOutputStream(file))) {

@@ -148,7 +148,7 @@ public class ClientHandler extends Handler {
 				null,
 				options,
 				options[0]
-				);
+		);
 
 		if (result == JOptionPane.CLOSED_OPTION) {
 			return null;

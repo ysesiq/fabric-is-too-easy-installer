@@ -42,19 +42,6 @@ public class MetaHandler extends CompletableHandler<List<MetaHandler.GameVersion
 		complete(versions);
 	}
 
-	public void load(String arg) throws IOException {
-		URL url = new URL(metaUrl + "/" + arg);
-
-		Json json = Json.read(Utils.readTextFile(url));
-
-		this.versions = json.asJsonList()
-				.stream()
-				.map(GameVersion::new)
-				.collect(Collectors.toList());
-
-		complete(versions);
-	}
-
 	public List<GameVersion> getVersions() {
 		return Collections.unmodifiableList(versions);
 	}
@@ -75,13 +62,9 @@ public class MetaHandler extends CompletableHandler<List<MetaHandler.GameVersion
 
 	public static class GameVersion {
 		String version;
-		boolean stable = true;
+		boolean stable;
 
 		public GameVersion(Json json) {
-			if (json.has("loader")) {
-				json = json.at("loader");
-			}
-
 			version = json.at("version").asString();
 			stable = json.at("stable").asBoolean();
 		}

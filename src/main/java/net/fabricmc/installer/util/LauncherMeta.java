@@ -37,7 +37,7 @@ public class LauncherMeta {
 	private static LauncherMeta load() throws IOException {
 		List<Version> versions = new ArrayList<>();
 		versions.addAll(getVersionsFromUrl(Reference.MINECRAFT_LAUNCHER_MANIFEST));
-		versions.addAll(getVersionsFromUrl(Reference.EXPERIMENTAL_LAUNCHER_MANIFEST));
+		versions.addAll(getVersionsFromUrl(Reference.OLD_SNAPSHOTS));
 
 		return new LauncherMeta(versions);
 	}

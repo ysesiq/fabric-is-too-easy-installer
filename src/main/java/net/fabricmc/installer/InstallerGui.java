@@ -50,8 +50,7 @@ public class InstallerGui extends JFrame {
 
 		instance = this;
 
-		Main.GAME_VERSION_META.load();
-		Main.LOADER_META.load("1.8.9");
+		Main.loadMetadata();
 	}
 
 	public static void selectInstallLocation(Supplier<String> initalDir, Consumer<String> selectedDir) {
@@ -66,8 +65,7 @@ public class InstallerGui extends JFrame {
 		}
 	}
 
-	public static void start()
-			throws IOException, ClassNotFoundException, UnsupportedLookAndFeelException, InstantiationException, IllegalAccessException, XMLStreamException {
+	public static void start() throws IOException, ClassNotFoundException, UnsupportedLookAndFeelException, InstantiationException, IllegalAccessException, XMLStreamException {
 		//This will make people happy
 		String lafCls = UIManager.getSystemLookAndFeelClassName();
 		UIManager.setLookAndFeel(lafCls);

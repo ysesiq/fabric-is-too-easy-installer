@@ -41,7 +41,7 @@ public class Main {
 			System.setProperty("javax.net.ssl.trustStoreType", "WINDOWS-ROOT");
 		}
 
-		System.out.println("Loading Legacy Fabric Installer: " + Main.class.getPackage().getImplementationVersion());
+		System.out.println("Loading LegacyFabric Installer: " + Main.class.getPackage().getImplementationVersion());
 
 		HANDLERS.add(new ClientHandler());
 		HANDLERS.add(new ServerHandler());
@@ -77,10 +77,7 @@ public class Main {
 			HANDLERS.forEach(handler -> System.out.printf("%s %s\n", handler.name().toLowerCase(), handler.cliHelp()));
 			loadMetadata();
 
-			GAME_VERSION_META.load();
-			LOADER_META.load("1.8.9");
-
-			System.out.printf("\nLatest Version: %s\nLatest Loader: %s\n", Main.GAME_VERSION_META.getLatestVersion(false), Main.LOADER_META.getLatestVersion(false));
+			System.out.printf("\nLatest Loader: %s\n", Main.LOADER_META.getLatestVersion(false).getVersion());
 		} else {
 			loadMetadata();
 
