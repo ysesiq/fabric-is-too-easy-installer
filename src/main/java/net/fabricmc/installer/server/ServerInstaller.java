@@ -23,7 +23,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -51,6 +50,7 @@ import java.util.zip.ZipOutputStream;
 import mjson.Json;
 
 import net.fabricmc.installer.LoaderVersion;
+import net.fabricmc.installer.util.FabricService;
 import net.fabricmc.installer.util.InstallerProgress;
 import net.fabricmc.installer.util.Library;
 import net.fabricmc.installer.util.Utils;
@@ -80,7 +80,7 @@ public class ServerInstaller {
 		String mainClassMeta;
 
 		if (loaderVersion.path == null) { // loader jar unavailable, grab everything from meta
-			URL downloadUrl = new URL(String.format("https://maven.fabricmc.net/net/fabricmc/fabric-loader/%s/fabric-loader-%s.json", loaderVersion.name, loaderVersion.name));
+			Json json = FabricService.queryMetaJson(String.format("v2/versions/loader/%s/%s/server/json", gameVersion, loaderVersion.name));
 
 			Json json = Json.read(Utils.readTextFile(downloadUrl));
 
@@ -134,7 +134,7 @@ public class ServerInstaller {
 
 			if (library.inputPath == null) {
 				progress.updateProgress(new MessageFormat(Utils.BUNDLE.getString("progress.download.library.entry")).format(new Object[]{library.name}));
-				Utils.downloadFile(new URL(library.getURL()), libraryFile);
+				FabricService.downloadSubstitutedMaven(library.getURL(), libraryFile);
 			} else {
 				Files.createDirectories(libraryFile.getParent());
 				Files.copy(library.inputPath, libraryFile, StandardCopyOption.REPLACE_EXISTING);

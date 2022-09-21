@@ -18,14 +18,17 @@ package net.fabricmc.installer.client;
 
 import java.io.FileWriter;
 import java.io.IOException;
-import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.text.MessageFormat;
 
 import mjson.Json;
 
 import net.fabricmc.installer.LoaderVersion;
+import net.fabricmc.installer.util.FabricService;
 import net.fabricmc.installer.util.InstallerProgress;
+import net.fabricmc.installer.util.Library;
 import net.fabricmc.installer.util.Reference;
 import net.fabricmc.installer.util.Utils;
 
@@ -55,55 +58,24 @@ public class ClientInstaller {
 		Files.deleteIfExists(dummyJar);
 		Files.createFile(dummyJar);
 
+		Json json = FabricService.queryMetaJson(String.format("v2/versions/loader/%s/%s/profile/json", gameVersion, loaderVersion.name));
+		Files.write(profileJson, json.toString().getBytes(StandardCharsets.UTF_8));
+
 		/*
-		URL profileUrl = new URL(Reference.getMetaServerEndpoint(String.format("v2/versions/loader/%s/%s/profile/json", gameVersion, loaderVersion.name)));
-		Utils.downloadFile(profileUrl, profileJson);
-		*/
+		Downloading the libraries isn't strictly necessary as the launcher will do it for us.
+		Do it anyway in case the launcher fails, we know we have a working connection to maven here.
+		 */
+		Path libsDir = mcDir.resolve("libraries");
 
-		URL downloadUrl = new URL(String.format("https://maven.fabricmc.net/net/fabricmc/fabric-loader/%s/fabric-loader-%s.json", loaderVersion.name, loaderVersion.name));
+		for (Json libraryJson : json.at("libraries").asJsonList()) {
+			Library library = new Library(libraryJson);
+			Path libraryFile = libsDir.resolve(library.getPath());
+			String url = library.getURL();
 
-		Json json = Json.read(Utils.readTextFile(downloadUrl));
-
-		Json libraries = Json.array(
-				Json.object()
-						.set("name", String.format("net.fabricmc:fabric-loader:%s", loaderVersion.name))
-						.set("url", "https://maven.fabricmc.net/"),
-				Json.object()
-						.set("name", String.format("net.fabricmc:intermediary:%s", gameVersion))
-						.set("url", "https://maven.legacyfabric.net/")
-		);
-
-		if (Utils.compareVersions(gameVersion, "1.6.4") <= 0 && Utils.compareVersions(loaderVersion.name, "0.12.12") <= 0) {
-			libraries.add(
-					Json.object()
-							.set("name", "org.apache.logging.log4j:log4j-api:2.17.0")
-							.set("url", "https://repo1.maven.org/maven2/")
-			);
-			libraries.add(
-					Json.object()
-							.set("name", "org.apache.logging.log4j:log4j-core:2.17.0")
-							.set("url", "https://repo1.maven.org/maven2/")
-			);
+			//System.out.println("Downloading "+url+" to "+libraryFile);
+			progress.updateProgress(new MessageFormat(Utils.BUNDLE.getString("progress.download.library.entry")).format(new Object[]{library.name}));
+			FabricService.downloadSubstitutedMaven(url, libraryFile);
 		}
-
-		for (Json libraryJson : json.at("libraries").at("common").asJsonList()) {
-			libraries.add(
-					Json.object()
-							.set("name", libraryJson.at("name").asString())
-							.set("url", libraryJson.at("url").asString())
-			);
-		}
-
-		Json versionJson = Json.object()
-				.set("id", profileName)
-				.set("inheritsFrom", gameVersion)
-				.set("type", "release")
-				.set("mainClass", "net.fabricmc.loader.launch.knot.KnotClient")
-				.set("libraries", libraries);
-
-		FileWriter writer = new FileWriter(profileJson.toFile());
-		writer.write(versionJson.toString());
-		writer.close();
 
 		progress.updateProgress(Utils.BUNDLE.getString("progress.done"));
 
