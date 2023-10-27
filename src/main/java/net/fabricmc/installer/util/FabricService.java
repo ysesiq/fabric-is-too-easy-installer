@@ -40,11 +40,11 @@ public final class FabricService {
 	 * Query and decode JSON from url, substituting Fabric Maven with fallbacks or overrides.
 	 */
 	public static Json queryJsonSubstitutedMaven(String url) throws IOException {
-		if (!url.startsWith(Reference.DEFAULT_MAVEN_SERVER)) {
+		if (!url.startsWith(Reference.LEGACY_FABRIC_MAVEN)) {
 			return Json.read(Utils.readString(new URL(url)));
 		}
 
-		String path = url.substring(Reference.DEFAULT_MAVEN_SERVER.length());
+		String path = url.substring(Reference.LEGACY_FABRIC_MAVEN.length());
 
 		return invokeWithFallbacks((service, arg) -> Json.read(Utils.readString(new URL(service.maven + arg))), path);
 	}
@@ -53,12 +53,12 @@ public final class FabricService {
 	 * Download url to file, substituting Fabric Maven with fallbacks or overrides.
 	 */
 	public static void downloadSubstitutedMaven(String url, Path out) throws IOException {
-		if (!url.startsWith(Reference.DEFAULT_MAVEN_SERVER)) {
+		if (!url.startsWith(Reference.LEGACY_FABRIC_MAVEN)) {
 			Utils.downloadFile(new URL(url), out);
 			return;
 		}
 
-		String path = url.substring(Reference.DEFAULT_MAVEN_SERVER.length());
+		String path = url.substring(Reference.LEGACY_FABRIC_MAVEN.length());
 
 		invokeWithFallbacks((service, arg) -> {
 			Utils.downloadFile(new URL(service.maven + arg), out);
@@ -106,8 +106,8 @@ public final class FabricService {
 	public static void setFixed(String metaUrl, String mavenUrl) {
 		if (metaUrl == null && mavenUrl == null) throw new NullPointerException("both meta and maven are null");
 
-		if (metaUrl == null) metaUrl = Reference.DEFAULT_META_SERVER;
-		if (mavenUrl == null) mavenUrl = Reference.DEFAULT_MAVEN_SERVER;
+		if (metaUrl == null) metaUrl = Reference.LEGACY_FABRIC_META;
+		if (mavenUrl == null) mavenUrl = Reference.LEGACY_FABRIC_MAVEN;
 
 		activeIndex = -1;
 		fixedService = new FabricService(metaUrl, mavenUrl);
