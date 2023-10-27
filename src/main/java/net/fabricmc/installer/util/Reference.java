@@ -20,9 +20,8 @@ public class Reference {
 	public static final String LOADER_NAME = "fabric-loader";
 
 	public static final String FABRIC_API_URL = "https://github.com/Legacy-Fabric/fabric/releases/";
-	public static final String SERVER_LAUNCHER_URL = "https://fabricmc.net/use/server/";
 	public static final String MINECRAFT_LAUNCHER_MANIFEST = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json";
-	public static final String OLD_SNAPSHOTS = "https://raw.githubusercontent.com/Legacy-Fabric/manifests/master/manifest.json";
+	public static final String OLD_SNAPSHOTS_MANIFEST = "https://raw.githubusercontent.com/Legacy-Fabric/manifests/master/manifest.json";
 
 	static final String DEFAULT_META_SERVER = "https://meta.legacyfabric.net/";
 	static final String DEFAULT_MAVEN_SERVER = "https://maven.legacyfabric.net/";
