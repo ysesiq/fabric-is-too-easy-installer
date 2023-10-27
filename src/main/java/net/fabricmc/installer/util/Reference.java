@@ -18,16 +18,15 @@ package net.fabricmc.installer.util;
 
 public class Reference {
 	public static final String LOADER_NAME = "fabric-loader";
-
-	public static final String FABRIC_API_URL = "https://github.com/Legacy-Fabric/fabric/releases/";
+	public static final String LEGACY_FABRIC_API_URL = "https://github.com/Legacy-Fabric/fabric/releases/";
 	public static final String MINECRAFT_LAUNCHER_MANIFEST = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json";
 	public static final String OLD_SNAPSHOTS_MANIFEST = "https://raw.githubusercontent.com/Legacy-Fabric/manifests/master/manifest.json";
-
-	static final String DEFAULT_META_SERVER = "https://meta.legacyfabric.net/";
-	static final String DEFAULT_MAVEN_SERVER = "https://maven.legacyfabric.net/";
+	public static final String LEGACY_FABRIC_META = "https://meta.legacyfabric.net/";
+	public static final String FABRIC_MAVEN = "https://maven.fabricmc.net/";
+	public static final String LEGACY_FABRIC_MAVEN = "https://maven.legacyfabric.net/";
 
 	static final FabricService[] FABRIC_SERVICES = {
-			new FabricService(DEFAULT_META_SERVER, DEFAULT_MAVEN_SERVER)//,
+			new FabricService(LEGACY_FABRIC_META, LEGACY_FABRIC_MAVEN)//,
 			// Do not use these fallback servers to interact with our web services. They can and will be unavailable at times and only support limited throughput.
 //			new FabricService("https://meta2.fabricmc.net/", "https://maven2.fabricmc.net/"),
 //			new FabricService("https://meta3.fabricmc.net/", "https://maven3.fabricmc.net/")

@@ -41,7 +41,7 @@ public class Main {
 			System.setProperty("javax.net.ssl.trustStoreType", "WINDOWS-ROOT");
 		}
 
-		System.out.println("Loading Fabric Installer: " + Main.class.getPackage().getImplementationVersion());
+		System.out.println("Loading Legacy Fabric Installer: " + Main.class.getPackage().getImplementationVersion());
 
 		HANDLERS.add(new ClientHandler());
 		HANDLERS.add(new ServerHandler());
@@ -77,7 +77,7 @@ public class Main {
 			HANDLERS.forEach(handler -> System.out.printf("%s %s\n", handler.name().toLowerCase(), handler.cliHelp()));
 			loadMetadata();
 
-			System.out.printf("\nLatest Version: %s\nLatest Loader: %s\n", GAME_VERSION_META.getLatestVersion(argumentParser.has("snapshot")).getVersion(), Main.LOADER_META.getLatestVersion(false).getVersion());
+			System.out.printf("\nLatest Loader: %s\n", Main.LOADER_META.getLatestVersion(false).getVersion());
 		} else {
 			loadMetadata();
 

@@ -53,6 +53,7 @@ import net.fabricmc.installer.LoaderVersion;
 import net.fabricmc.installer.util.FabricService;
 import net.fabricmc.installer.util.InstallerProgress;
 import net.fabricmc.installer.util.Library;
+import net.fabricmc.installer.util.Reference;
 import net.fabricmc.installer.util.Utils;
 
 public class ServerInstaller {
@@ -88,8 +89,8 @@ public class ServerInstaller {
 
 			mainClassMeta = json.at("mainClass").asString();
 		} else { // loader jar available, generate library list from it
-			libraries.add(new Library(String.format("net.fabricmc:fabric-loader:%s", loaderVersion.name), null, loaderVersion.path));
-			libraries.add(new Library(String.format("net.fabricmc:intermediary:%s", gameVersion), "https://maven.fabricmc.net/", null));
+			libraries.add(new Library(String.format("net.fabricmc:fabric-loader:%s", loaderVersion.name), Reference.FABRIC_MAVEN, loaderVersion.path));
+			libraries.add(new Library(String.format("net.fabricmc:intermediary:%s", gameVersion), Reference.LEGACY_FABRIC_MAVEN, null));
 
 			try (ZipFile zf = new ZipFile(loaderVersion.path.toFile())) {
 				ZipEntry entry = zf.getEntry("fabric-installer.json");

@@ -53,7 +53,7 @@ public final class ServerLauncher {
 		try {
 			launchData = initialise();
 		} catch (IOException e) {
-			throw new RuntimeException("Failed to setup fabric server", e);
+			throw new RuntimeException("Failed to setup legacy fabric server", e);
 		}
 
 		Objects.requireNonNull(launchData, "launchData is null, cannot proceed");
