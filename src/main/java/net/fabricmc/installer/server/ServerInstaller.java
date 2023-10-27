@@ -88,8 +88,8 @@ public class ServerInstaller {
 
 			mainClassMeta = json.at("mainClass").asString();
 		} else { // loader jar available, generate library list from it
-			libraries.add(new Library(String.format("net.fabricmc:fabric-loader:%s", loaderVersion.name), "https://maven.fabricmc.net/", loaderVersion.path));
-			libraries.add(new Library(String.format("net.fabricmc:intermediary:%s", gameVersion), "https://maven.legacyfabric.net/", null));
+			libraries.add(new Library(String.format("net.fabricmc:fabric-loader:%s", loaderVersion.name), null, loaderVersion.path));
+			libraries.add(new Library(String.format("net.fabricmc:intermediary:%s", gameVersion), "https://maven.fabricmc.net/", null));
 
 			try (ZipFile zf = new ZipFile(loaderVersion.path.toFile())) {
 				ZipEntry entry = zf.getEntry("fabric-installer.json");
@@ -139,7 +139,7 @@ public class ServerInstaller {
 	}
 
 	private static void makeLaunchJar(Path file, String launchMainClass, String jarMainClass, List<Path> libraryFiles,
-										boolean shadeLibraries, InstallerProgress progress) throws IOException {
+			boolean shadeLibraries, InstallerProgress progress) throws IOException {
 		Files.deleteIfExists(file);
 
 		try (ZipOutputStream zipOutputStream = new ZipOutputStream(Files.newOutputStream(file))) {

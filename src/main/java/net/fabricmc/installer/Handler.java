@@ -215,7 +215,7 @@ public abstract class Handler implements InstallerProgress {
 		return String.format(Locale.ENGLISH,
 				"font-family:%s;font-weight:%s;font-size:%dpt;background-color: rgb(%d,%d,%d);",
 				font.getFamily(), (font.isBold() ? "bold" : "normal"), font.getSize(), color.getRed(), color.getGreen(), color.getBlue()
-		);
+				);
 	}
 
 	@Override

@@ -16,9 +16,9 @@
 
 package net.fabricmc.installer;
 
+import java.awt.Toolkit;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Toolkit;
 import java.io.File;
 import java.io.IOException;
 import java.util.Locale;
