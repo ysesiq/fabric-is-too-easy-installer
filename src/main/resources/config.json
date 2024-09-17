@@ -45,6 +45,10 @@
     {
       "name":"org.ow2.asm:asm-util:9.3",
       "url":"https://maven.fabricmc.net/"
+    },
+    {
+      "name": "it.unimi.dsi:fastutil:8.5.12",
+      "url": "https://repo.maven.apache.org/maven2"
     }
   ],
   "id":"fabric-loader-${loaderVersion}-1.6.4-MITE",

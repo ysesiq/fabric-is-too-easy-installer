@@ -36,6 +36,10 @@ public final class FabricService {
 		return invokeWithFallbacks((service, arg) -> Json.read(Utils.readString(new URL(service.meta + arg))), path);
 	}
 
+	public static Json queryMetaJsonLocal(Path path) throws IOException {
+		return invokeWithFallbacks((service, arg) -> Json.read(Utils.readString(path)), path);
+	}
+
 	/**
 	 * Query and decode JSON from url, substituting Fabric Maven with fallbacks or overrides.
 	 */

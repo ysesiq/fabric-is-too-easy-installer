@@ -84,15 +84,17 @@ public class ServerInstaller {
 		String mainClassMeta;
 
 		if (loaderVersion.path == null) { // loader jar unavailable, grab everything from meta
-//			Json json = FabricService.queryMetaJson(String.format("v2/versions/loader/%s/%s/server/json", gameVersion, loaderVersion.name));
+			String name = String.format("fabric-loader-%s-1.6.4-MITE", loaderVersion.name);
+			Path profileJson = dir.resolve(name + ".json");
+			if (!Files.exists(dir)) {
+				Files.createDirectories(dir);
+			}
 
-			Path profileJson = dir.resolve("server-libs.json");
-			File fileJson = new File(String.valueOf(profileJson));
-			Json json = Json.make(new Json.DefaultFactory());
-
-			String string = getString(ServerInstaller.class.getResourceAsStream("/config.json"));
+			String string = getString(ClientInstaller.class.getResourceAsStream("/server_config.json"));
 			string = string.replace("${loaderVersion}", loaderVersion.name);
-			json.at(string);
+			Files.write(profileJson, string.getBytes(StandardCharsets.UTF_8));
+			Json json = FabricService.queryMetaJsonLocal(profileJson);
+
 			for (Json libraryJson : json.at("libraries").asJsonList()) {
 				libraries.add(new Library(libraryJson));
 			}
