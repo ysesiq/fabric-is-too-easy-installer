@@ -1,5 +1,5 @@
-# legacy-fabric-installer
-An Installer for LegacyFabric
+# fabric-is-too-easy-installer
+An Installer for Fabric Is Too Easy
 
 #### Installing
-Download install from [here](https://legacyfabric.net/downloads.html), run the jar with at least Java 8.
+Download install from release, run the jar with at least Java 8.

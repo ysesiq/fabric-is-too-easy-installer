@@ -16,7 +16,11 @@
 
 package net.fabricmc.installer.client;
 
+import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,6 +35,8 @@ import net.fabricmc.installer.util.Library;
 import net.fabricmc.installer.util.Reference;
 import net.fabricmc.installer.util.Utils;
 
+import javax.swing.*;
+
 public class ClientInstaller {
 	public static String install(Path mcDir, String gameVersion, LoaderVersion loaderVersion, InstallerProgress progress) throws IOException {
 		System.out.println("Installing " + gameVersion + " with fabric " + loaderVersion.name);
@@ -39,8 +45,8 @@ public class ClientInstaller {
 
 		Path versionsDir = mcDir.resolve("versions");
 		Path profileDir = versionsDir.resolve(profileName);
-		Path profileJson = profileDir.resolve(profileName + ".json");
-
+		String name = String.format("fabric-loader-%s-1.6.4-MITE", loaderVersion.name);
+		Path profileJson = profileDir.resolve(name + ".json");
 		if (!Files.exists(profileDir)) {
 			Files.createDirectories(profileDir);
 		}
@@ -48,8 +54,9 @@ public class ClientInstaller {
 		Path profileJar = profileDir.resolve(profileName + ".jar");
 		Files.deleteIfExists(profileJar);
 
-		Json json = FabricService.queryMetaJson(String.format("v2/versions/loader/%s/%s/profile/json", gameVersion, loaderVersion.name));
-		Files.write(profileJson, json.toString().getBytes(StandardCharsets.UTF_8));
+		String string = getString(ClientInstaller.class.getResourceAsStream("/config.json"));
+		string = string.replace("${loaderVersion}", loaderVersion.name);
+		Files.write(profileJson, string.getBytes(StandardCharsets.UTF_8));
 
 		/*
 		Downloading the libraries isn't strictly necessary as the launcher will do it for us.
@@ -57,18 +64,30 @@ public class ClientInstaller {
 		 */
 		Path libsDir = mcDir.resolve("libraries");
 
-		for (Json libraryJson : json.at("libraries").asJsonList()) {
-			Library library = new Library(libraryJson);
-			Path libraryFile = libsDir.resolve(library.getPath());
-			String url = library.getURL();
-
-			//System.out.println("Downloading "+url+" to "+libraryFile);
-			progress.updateProgress(new MessageFormat(Utils.BUNDLE.getString("progress.download.library.entry")).format(new Object[]{library.name}));
-			FabricService.downloadSubstitutedMaven(url, libraryFile);
-		}
+//		for (Json libraryJson : json.at("libraries").asJsonList()) {
+//			Library library = new Library(libraryJson);
+//			Path libraryFile = libsDir.resolve(library.getPath());
+//			String url = library.getURL();
+//
+//			//System.out.println("Downloading "+url+" to "+libraryFile);
+//			progress.updateProgress(new MessageFormat(Utils.BUNDLE.getString("progress.download.library.entry")).format(new Object[]{library.name}));
+//			FabricService.downloadSubstitutedMaven(url, libraryFile);
+//		}
 
 		progress.updateProgress(Utils.BUNDLE.getString("progress.done"));
 
 		return profileName;
 	}
+
+	private static String getString(InputStream inputStream) throws IOException {
+		StringBuilder stringBuilder = new StringBuilder();
+		BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+
+		String line;
+		while ((line = bufferedReader.readLine()) != null) {
+			stringBuilder.append(line).append("\n");
+		}
+		return stringBuilder.toString();
+	}
+
 }

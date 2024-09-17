@@ -18,6 +18,7 @@ package net.fabricmc.installer.server;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -27,6 +28,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.text.CharacterIterator;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -50,6 +52,7 @@ import java.util.zip.ZipOutputStream;
 import mjson.Json;
 
 import net.fabricmc.installer.LoaderVersion;
+import net.fabricmc.installer.client.ClientInstaller;
 import net.fabricmc.installer.util.FabricService;
 import net.fabricmc.installer.util.InstallerProgress;
 import net.fabricmc.installer.util.Library;
@@ -81,8 +84,15 @@ public class ServerInstaller {
 		String mainClassMeta;
 
 		if (loaderVersion.path == null) { // loader jar unavailable, grab everything from meta
-			Json json = FabricService.queryMetaJson(String.format("v2/versions/loader/%s/%s/server/json", gameVersion, loaderVersion.name));
+//			Json json = FabricService.queryMetaJson(String.format("v2/versions/loader/%s/%s/server/json", gameVersion, loaderVersion.name));
 
+			Path profileJson = dir.resolve("server-libs.json");
+			File fileJson = new File(String.valueOf(profileJson));
+			Json json = Json.make(new Json.DefaultFactory());
+
+			String string = getString(ServerInstaller.class.getResourceAsStream("/config.json"));
+			string = string.replace("${loaderVersion}", loaderVersion.name);
+			json.at(string);
 			for (Json libraryJson : json.at("libraries").asJsonList()) {
 				libraries.add(new Library(libraryJson));
 			}
@@ -248,5 +258,16 @@ public class ServerInstaller {
 		}
 
 		writer.flush();
+	}
+
+	private static String getString(InputStream inputStream) throws IOException {
+		StringBuilder stringBuilder = new StringBuilder();
+		BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+
+		String line;
+		while ((line = bufferedReader.readLine()) != null) {
+			stringBuilder.append(line).append("\n");
+		}
+		return stringBuilder.toString();
 	}
 }

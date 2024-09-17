@@ -64,7 +64,7 @@ public abstract class Handler implements InstallerProgress {
 	public JButton selectFolderButton;
 	public JLabel statusLabel;
 
-	public JCheckBox snapshotCheckBox;
+//	public JCheckBox snapshotCheckBox;
 
 	private JPanel pane;
 
@@ -93,18 +93,19 @@ public abstract class Handler implements InstallerProgress {
 
 		addRow(pane, c, "prompt.game.version",
 				gameVersionComboBox = new JComboBox<>(),
-				createSpacer(),
-				snapshotCheckBox = new JCheckBox(Utils.BUNDLE.getString("option.show.snapshots")));
-		snapshotCheckBox.setSelected(false);
-		snapshotCheckBox.addActionListener(e -> {
-			if (Main.GAME_VERSION_META.isComplete()) {
-				updateGameVersions();
-			}
-		});
+				createSpacer());
+//				snapshotCheckBox = new JCheckBox(Utils.BUNDLE.getString("option.show.snapshots")));
+//		snapshotCheckBox.setSelected(false);
+//		snapshotCheckBox.addActionListener(e -> {
+//			if (Main.GAME_VERSION_META.isComplete()) {
+//				updateGameVersions();
+//			}
+//		});
 
 		Main.GAME_VERSION_META.onComplete(versions -> {
 			updateGameVersions();
 		});
+
 
 		addRow(pane, c, "prompt.loader.version",
 				loaderVersionComboBox = new JComboBox<>());
@@ -158,13 +159,13 @@ public abstract class Handler implements InstallerProgress {
 	private void updateGameVersions() {
 		gameVersionComboBox.removeAllItems();
 
-		for (MetaHandler.GameVersion version : Main.GAME_VERSION_META.getVersions()) {
-			if (!snapshotCheckBox.isSelected() && !version.isStable()) {
-				continue;
-			}
+//		for (MetaHandler.GameVersion version : Main.GAME_VERSION_META.getVersions()) {
+//			if (!snapshotCheckBox.isSelected() && !version.isStable()) {
+//				continue;
+//			}
 
-			gameVersionComboBox.addItem(version.getVersion());
-		}
+			gameVersionComboBox.addItem("1.6.4-MITE");
+//		}
 
 		gameVersionComboBox.setSelectedIndex(0);
 
